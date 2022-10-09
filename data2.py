@@ -85,7 +85,13 @@ def get_nli(data_path):
             'label': target['test']['data']}
     return train, dev, test
     
-def get_pdtb(data_path,dom,dat,tv):
+def get_pdtb(data_path,dom,dataset_name,tv):
+    """
+    Args:
+        - dataset_name (str): One of 'twitter', 'yelp', 'movie'
+            or another you define and add files for.
+            Will be used to identify data files.
+    """
     s1 = {}
     s2 = {}
     target = {}
@@ -98,24 +104,12 @@ def get_pdtb(data_path,dom,dat,tv):
         s1[data_type], s2[data_type], target[data_type],targetv[data_type] = {},{}, {}, {}
     s1['train']['path'] = os.path.join(data_path, 'data.txt')
     
-    if dat=='twitter':
-        s1['test']['path'] = os.path.join(data_path, 'twitters.txt')
 
-        target['test']['path'] = os.path.join(data_path,'twitterl.txt')
-        targetv['test']['path'] = 'dataset/data/twitterv.txt'
-        s1['unlab']['path'] ='dataset/data/twitteru.txt'
-    elif dat=='yelp':
-        s1['test']['path'] = os.path.join(data_path, 'yelps.txt')
-        target['test']['path'] = os.path.join(data_path,'yelpl.txt')
-        targetv['test']['path'] = 'dataset/data/yelpv.txt'
-        s1['unlab']['path'] = 'dataset/data/yelpu.txt'
-    
-    elif dat=='movie':
-        s1['test']['path'] = os.path.join(data_path, 'movies.txt')
-        target['test']['path'] = os.path.join(data_path,'moviel.txt')
-        targetv['test']['path'] = 'dataset/data/moviev.txt'
-        s1['unlab']['path'] = 'dataset/data/movieu.txt'
-    
+    s1['test']['path'] = os.path.join(data_path, f'{dataset_name}_sentences.txt') # Sentences
+    target['test']['path'] = os.path.join(data_path,f'{dataset_name}_labels.txt') # Specificity binary labels for sentences
+    targetv['test']['path'] = f'dataset/data/{dataset_name}_ratings.txt' # Specificity ratings for sentences
+    s1['unlab']['path'] =f'dataset/data/{dataset_name}_unlabeled_sentences.txt' # Unlabeled sentences
+
     s1['trainu']['path'] = os.path.join(data_path, 'aaai15unlabeled/all.60000.sents')
 
     target['train']['path'] = os.path.join(data_path,'label.txt')
@@ -136,17 +130,17 @@ def get_pdtb(data_path,dom,dat,tv):
                 for line in open(targetv['test']['path'], 'r')])
     target['trainu']['data'] = np.array([int(float(line.rstrip('\n'))>0.5)
                 for line in open(target['trainu']['path'], 'r')])
-    if not (dat=='subso'):   
+    if not (dataset_name=='subso'):   
         assert len(s1['train']['sent'])== len(target['train']['data'])
 
     print('** {0} DATA : Found {1} of {2} sentences.'.format(data_type.upper(), len(s1['train']['sent']), 'train'))
-    if dat=='twi':   
+    if dataset_name=='twi':   
         train = {'s1': s1['test']['sent'][:tv],# 's2': s2['train']['sent'],
                  'label': target['test']['data'][:tv]}
-    elif dat=='pdtb':
+    elif dataset_name=='pdtb':
         train = {'s1': s1['train']['sent'][:2784],# 's2': s2['train']['sent'],
                  'label': target['train']['data'][:2784]}
-    elif dat=='pdtb2':
+    elif dataset_name=='pdtb2':
         train = {'s1': s1['train']['sent'][:49280],# 's2': s2['train']['sent'],
                  'label': target['train']['data'][:49280]}
     
