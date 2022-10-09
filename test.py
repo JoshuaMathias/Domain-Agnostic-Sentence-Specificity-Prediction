@@ -23,6 +23,7 @@ global_step=0
 
 parser = argparse.ArgumentParser(description='NLI training')
 # paths
+parser.add_argument("--use_gpu", type=bool, default=True, help="Set to False to use CPU instead of GPU with cuda.")
 parser.add_argument("--nlipath", type=str, default='dataset/data/', help="NLI data path (SNLI or MultiNLI)")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
@@ -96,7 +97,8 @@ if params.wed==300:
     GLOVE_PATH = "glove.840B.300d.txt"
 
 # set gpu device
-torch.cuda.set_device(params.gpu_id)
+if params.use_gpu:
+    torch.cuda.set_device(params.gpu_id)
 
 # print parameters passed, and all parameters
 print('\ntogrep : {0}\n'.format(sys.argv[1:]))
@@ -107,8 +109,10 @@ print(params)
 SEED
 """
 np.random.seed(params.seed)
-torch.manual_seed(params.seed)
-torch.cuda.manual_seed(params.seed)
+if params.use_gpu:
+    torch.cuda.manual_seed(params.seed)
+else:
+    torch.manual_seed(params.seed)
 
 """
 DATA
@@ -222,7 +226,7 @@ config_nli_model = {
     'pool_type'      :  params.pool_type      ,
     'nonlinear_fc'   :  params.nonlinear_fc   ,
     'encoder_type'   :  params.encoder_type   ,
-    'use_cuda'       :  True                  ,
+    'use_cuda'       :  params.use_gpu                  ,
 
 }
 print(config_nli_model)
@@ -252,9 +256,9 @@ optimizer = optim_fn(pdtb_net.parameters(), **optim_params)
 
 # cuda by default
 if config_nli_model['use_cuda']:
-    pdtb_net.cuda()
-    pdtb_net2.cuda()
-    loss_fn.cuda()
+   pdtb_net.cuda()
+   pdtb_net2.cuda()
+   loss_fn.cuda()
 
 
 """
