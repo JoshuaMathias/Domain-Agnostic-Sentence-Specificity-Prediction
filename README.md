@@ -30,15 +30,15 @@ The twitter, yelp, and movies data and annotations used in the paper is in datas
 
 Data format:
 
-twitters.txt is the sentences
+twitters.txt contains the sentences that have corresponding labels in twitterv.txt and twitterl.txt ("s" for sentences).
 
-twitterv.txt are average specificity labeled by turkers for each sentence, permutated in the same order. 
+twitterv.txt are average specificity labeled by turkers for each sentence in twitters.txt, permutated in the same order ("v" for values).
 
-twitteru.txt is the unlabeled target domain data used in the paper
+twitteru.txt is the unlabeled target domain data used in the paper ("u" for unlabeled).
 
-twitterl.txt is the binary specificity label, which is not used.
+twitterl.txt are the binary specificity labels, which are not used ("l" for labeled).
 
-For other domains, ubstitute the domain name in the file names.
+For other domains, substitute the domain name in the file names.
 
 ## Running 
 Training command:
@@ -59,6 +59,15 @@ When testing, change the s1['test']['path'] in data2.py and the path of xst in t
 The unlabeled data can be the same as test data.
 
 <b>The first line in the testing data is ignored.</b>
+
+### Steps from beginning to end (assumes GPU)
+
+- git clone https://github.com/wjko2/Domain-Agnostic-Sentence-Specificity-Prediction.git
+- cd Domain-Agnostic-Sentence-Specificity-Prediction
+- wget https://downloads.cs.stanford.edu/nlp/data/glove.840B.300d.zip
+- unzip glove.840B.300d.zip
+- python train.py --gpu_id 0 --test_data twitter
+- python test.py  --gpu_id 0 --test_data twitter
 
 ## For users without GPU/CUDA
 Please replace the train.py, test.py, model.py with the files in no_cuda.zip
