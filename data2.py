@@ -33,7 +33,7 @@ def get_word_dict(sentences):
 def get_glove(word_dict, glove_path):
     # create word_vec with glove vectors
     word_vec = {}
-    with open(glove_path) as f:
+    with open(glove_path, encoding="utf8") as f:
         for line in f:
             word, vec = line.split(' ', 1)
             if word in word_dict:
@@ -85,10 +85,11 @@ def get_nli(data_path):
             'label': target['test']['data']}
     return train, dev, test
     
-def get_pdtb(data_path,dom,dataset_name,tv):
+def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
     """
     Args:
-        - dataset_name (str): One of 'twitter', 'yelp', 'movie'
+        - supervised_data_name (str): This is used for the supervised portion of the training. See data.txt and label.txt for an example.
+        - unsupervised_data_name (str): One of 'twitter', 'yelp', 'movie'
             or another you define and add files for.
             Will be used to identify data files.
     """
@@ -102,45 +103,55 @@ def get_pdtb(data_path,dom,dataset_name,tv):
     
     for data_type in ['trainu','train','unlab','test']:
         s1[data_type], s2[data_type], target[data_type],targetv[data_type] = {},{}, {}, {}
-    s1['train']['path'] = os.path.join(data_path, 'data.txt')
+    if supervised_data_name:
+        s1['train']['path'] = os.path.join(data_path, f'{supervised_data_name}_data.txt')
     
 
-    s1['test']['path'] = os.path.join(data_path, f'{dataset_name}_sentences.txt') # Sentences
-    target['test']['path'] = os.path.join(data_path,f'{dataset_name}_labels.txt') # Specificity binary labels for sentences
-    targetv['test']['path'] = f'dataset/data/{dataset_name}_ratings.txt' # Specificity ratings for sentences
-    s1['unlab']['path'] =f'dataset/data/{dataset_name}_unlabeled_sentences.txt' # Unlabeled sentences
+    s1['test']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_sentences.txt') # Sentences
+    s1['unlab']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_unlabeled_sentences.txt') # Unlabeled sentences
+    # Note: The data specified by the below target and targetv are not used except as dummy variables,
+    # but if not provided or not existing there will be an error.
+    target['test']['path'] = 'dataset/data/twitterl.txt' # Specificity binary labels for sentences
+    targetv['test']['path'] = 'dataset/data/twitterv.txt' # Spelabelcificity ratings for sentences
 
     s1['trainu']['path'] = os.path.join(data_path, 'aaai15unlabeled/all.60000.sents')
 
-    target['train']['path'] = os.path.join(data_path,'label.txt')
+    if supervised_data_name:
+        target['train']['path'] = os.path.join(data_path,f'{supervised_data_name}_labels.txt')
 
     target['trainu']['path'] = os.path.join(data_path,'aaai15unlabeled/all.60000.spec')
 
-    s1['train']['sent'] = [line.rstrip() for line in open(s1['train']['path'], 'r')]
+    if supervised_data_name:
+        s1['train']['sent'] = [line.rstrip() for line in open(s1['train']['path'], 'r')]
     s1['unlab']['sent'] = [line.rstrip() for line in open(s1['unlab']['path'], 'r')]
     s1['test']['sent'] = [line.rstrip() for line in open(s1['test']['path'], 'r')]
     s1['trainu']['sent'] = [line.rstrip() for line in open(s1['trainu']['path'], 'r')]
    
-    target['train']['data'] = np.array([dico_label[line.rstrip('\n')]
-                for line in open(target['train']['path'], 'r')])
-    target['test']['data'] = np.array([dico_label[line.rstrip('\n')]
-                for line in open(target['test']['path'], 'r')])
+    if supervised_data_name:
+        target['train']['data'] = np.array([dico_label[line.rstrip('\n')]
+                    for line in open(target['train']['path'], 'r')])
+    
+    try:
+        target['test']['data'] = np.array([dico_label[line.rstrip('\n')]
+                    for line in open(target['test']['path'], 'r')])
+    except KeyError:
+        raise KeyError(f'Invalid label found, where the options are {dico_label}\nFilepath with invalid label: {target["test"]["path"]}')
 
     targetv['test']['data'] = np.array([float(line.rstrip('\n'))
                 for line in open(targetv['test']['path'], 'r')])
     target['trainu']['data'] = np.array([int(float(line.rstrip('\n'))>0.5)
                 for line in open(target['trainu']['path'], 'r')])
-    if not (dataset_name=='subso'):   
+    if not (unsupervised_data_name=='subso'):   
         assert len(s1['train']['sent'])== len(target['train']['data'])
 
     print('** {0} DATA : Found {1} of {2} sentences.'.format(data_type.upper(), len(s1['train']['sent']), 'train'))
-    if dataset_name=='twi':   
+    if unsupervised_data_name=='twi':   
         train = {'s1': s1['test']['sent'][:tv],# 's2': s2['train']['sent'],
                  'label': target['test']['data'][:tv]}
-    elif dataset_name=='pdtb':
+    elif unsupervised_data_name=='pdtb':
         train = {'s1': s1['train']['sent'][:2784],# 's2': s2['train']['sent'],
                  'label': target['train']['data'][:2784]}
-    elif dataset_name=='pdtb2':
+    elif unsupervised_data_name=='pdtb2':
         train = {'s1': s1['train']['sent'][:49280],# 's2': s2['train']['sent'],
                  'label': target['train']['data'][:49280]}
     

@@ -23,8 +23,10 @@ global_step=0
 
 parser = argparse.ArgumentParser(description='NLI training')
 # paths
-parser.add_argument("--use_gpu", type=bool, default=True, help="Set to False to use CPU instead of GPU with cuda.")
+parser.add_argument("--use_gpu", action='store_true', help="Specify this argument (--use_gpu with nothing after) to use GPU with cuda instead of CPU.")
 parser.add_argument("--nlipath", type=str, default='dataset/data/', help="NLI data path (SNLI or MultiNLI)")
+parser.add_argument("--unsupervised_data_name", type=str, default="twitter", help="The domain to adapt to using unsupervised training. Will search for {unsupervised_data_name}_sentences.txt and {unsupervised_data_name}_ratings.txt")
+parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
 parser.add_argument("--c", type=float, default='1000')
@@ -66,7 +68,6 @@ parser.add_argument("--iprob", type=float, default=0.15, help="max norm (grad cl
 parser.add_argument("--sprob", type=float, default=0.05, help="max norm (grad clipping)")
 parser.add_argument("--sf", type=float, default=1, help="max norm (grad clipping)")
 parser.add_argument("--wf", type=float, default=1, help="max norm (grad clipping)")
-parser.add_argument("--test_data", type=str, default="twitter", help="max norm (grad clipping)")
 # model
 parser.add_argument("--encoder_type", type=str, default='BLSTMEncoder', help="see list of encoders")
 parser.add_argument("--enc_lstm_dim", type=int, default=100, help="encoder nhid dimension")
@@ -94,7 +95,7 @@ parser.add_argument("--eeps", type=float, default=0.1, help="seed")
 
 params, _ = parser.parse_known_args()
 if params.wed==300:
-    GLOVE_PATH = "glove.840B.300d.txt"
+    GLOVE_PATH = params.glove_path
 
 # set gpu device
 if params.use_gpu:
@@ -160,15 +161,15 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.test_data,params.tv)
+train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv)
 #train['label']=train['label']*0.8+0.1
 #print(train['label'])
 
 #print (train[s1].shape)
 _,xsl = getFeatures(os.path.join(params.nlipath,'data.txt'))
 
-_,xst = getFeatures(os.path.join(params.nlipath,f'{params.test_data}_sentences.txt'))
-_,xsu = getFeatures(os.path.join(params.nlipath,f'{params.test_data}_unlabeled_sentences.txt'))
+_,xst = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_sentences.txt'))
+_,xsu = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_unlabeled_sentences.txt'))
 
 _,xslu= getFeatures(os.path.join(params.nlipath, 'aaai15unlabeled/all.60000.sents'))
 

@@ -24,8 +24,11 @@ global_step=0
 
 parser = argparse.ArgumentParser(description='NLI training')
 # paths
-parser.add_argument("--use_gpu", type=bool, default=True, help="Set to False to use CPU instead of GPU with cuda.")
+parser.add_argument("--use_gpu", action='store_true', help="Specify this argument (--use_gpu with nothing after) to use GPU with cuda instead of CPU.")
 parser.add_argument("--nlipath", type=str, default='dataset/data/', help="NLI data path (SNLI or MultiNLI)")
+parser.add_argument("--supervised_data_name", type=str, default="default", help="Labeled data for for supervised training. Will search for {supervised_data_name}_data.txt and {supervised_data_name}_label.txt")
+parser.add_argument("--unsupervised_data_name", type=str, default="twitter", help="The domain to adapt to using unsupervised training. Will search for {unsupervised_data_name}_sentences.txt and {unsupervised_data_name}_ratings.txt")
+parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
 parser.add_argument("--outputmodelname", type=str, default='model.pickle')
 parser.add_argument("--c", type=float, default='1000')
@@ -67,11 +70,10 @@ parser.add_argument("--iprob", type=float, default=0.15, help="max norm (grad cl
 parser.add_argument("--sprob", type=float, default=0.05, help="max norm (grad clipping)")
 parser.add_argument("--sf", type=float, default=1, help="max norm (grad clipping)")
 parser.add_argument("--wf", type=float, default=1, help="max norm (grad clipping)")
-parser.add_argument("--test_data", type=str, default="twitter", help="max norm (grad clipping)")
 # model
 parser.add_argument("--encoder_type", type=str, default='BLSTMEncoder', help="see list of encoders")
 parser.add_argument("--enc_lstm_dim", type=int, default=100, help="encoder nhid dimension")
-parser.add_argument("--n_enc_layers", type=int, default=1, help="encoder num layers")
+parser.add_argument("--n_enc_layers", type=int, default=3, help="encoder num layers")
 parser.add_argument("--fc_dim", type=int, default=100, help="nhid of fc layers")
 parser.add_argument("--n_classes", type=int, default=2, help="entailment/neutral/contradiction")
 parser.add_argument("--pool_type", type=str, default='max', help="max or mean")
@@ -94,12 +96,14 @@ parser.add_argument("--eeps", type=float, default=0.1, help="seed")
 
 
 params, _ = parser.parse_known_args()
-if  params.test_data=='pdtb':
+if  params.unsupervised_data_name=='pdtb':
     params.esize=2784
 if params.wed==300:
-    GLOVE_PATH = "glove.840B.300d.txt"
+    GLOVE_PATH = params.glove_path
 
 # set gpu device
+if params.use_gpu:
+    raise Exception("use gpu:", params.use_gpu)
 if params.use_gpu:
     torch.cuda.set_device(params.gpu_id)
 
@@ -163,11 +167,11 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.test_data,params.tv)
-_,xsl = getFeatures(os.path.join(params.nlipath,'data.txt'))
+train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name)
+_,xsl = getFeatures(os.path.join(params.nlipath,f'{params.supervised_data_name}_data.txt'))
 
-_,xst = getFeatures(os.path.join(params.nlipath,f'{params.test_data}_sentences.txt'))
-_,xsu = getFeatures(os.path.join(params.nlipath,f'{params.test_data}_unlabeled_sentences.txt'))
+_,xst = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_sentences.txt'))
+_,xsu = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_unlabeled_sentences.txt'))
 
 _,xslu= getFeatures(os.path.join(params.nlipath, 'aaai15unlabeled/all.60000.sents'))
 
@@ -200,7 +204,7 @@ for split in ['s1']:
         eval(data_type)[split] = np.array([['<s>'] +
             [word for word in sent.split() if word in word_vec] 
             #+            ['</s>']
-            for sent in eval(data_type)[split]])
+            for sent in eval(data_type)[split]], dtype=object)
 params.word_emb_dim = params.wed
 params.klmiu=0.42
 params.klsig=0.23
@@ -485,7 +489,7 @@ for jpp in range (params.sss):
         epoch += 1
         if epoch== params.me:
             stop_training=1
-            #fffa=open('opt'+params.test_data+str(params.c)+'ll'+str(params.c2)+'ll'+str(params.gnoise2)+'.txt','w')                                        
+            #fffa=open('opt'+params.unsupervised_data_name+str(params.c)+'ll'+str(params.c2)+'ll'+str(params.gnoise2)+'.txt','w')                                        
             #for ee in range(q.size(0)):
             #    fffa.write(str(q.data[ee,1])+'\n')
             #fffa.close()
@@ -495,7 +499,9 @@ for jpp in range (params.sss):
 print('\nTEST : Epoch {0}'.format(epoch))
 
 # Save encoder instead of full model
+print('train.py: Saving model encoder at ', os.path.join(params.outputdir, params.outputmodelname))
 torch.save(pdtb_net,
-           os.path.join(params.outputdir, params.outputmodelname ))
+           os.path.join(params.outputdir, params.outputmodelname))
+print('train.py: Saving model encoder at ', os.path.join(params.outputdir, '3os'+params.outputmodelname))
 torch.save(pdtb_net2,
-           os.path.join(params.outputdir, '3os'+params.outputmodelname )) 
+           os.path.join(params.outputdir, '3os'+params.outputmodelname)) 
