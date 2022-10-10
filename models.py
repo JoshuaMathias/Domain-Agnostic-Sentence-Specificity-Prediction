@@ -1,3 +1,4 @@
+
 # Copyright (c) 2017-present, Facebook, Inc.
 # All rights reserved.
 #
@@ -27,10 +28,12 @@ class BLSTMEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
 
     def is_cuda(self):
@@ -46,9 +49,14 @@ class BLSTMEncoder(nn.Module):
         sent_len, idx_sort = np.sort(sent_len)[::-1], np.argsort(-sent_len)
         idx_unsort = np.argsort(idx_sort)
 
-        idx_sort = torch.from_numpy(idx_sort).cuda() if self.is_cuda() \
-            else torch.from_numpy(idx_sort)
-        sent = sent.index_select(1, Variable(idx_sort).cuda())
+        use_cuda = self.use_cuda
+        if use_cuda:
+            idx_sort = torch.from_numpy(idx_sort).cuda()
+            sent = sent.index_select(1, Variable(idx_sort).cuda())
+        else:
+            idx_sort = torch.from_numpy(idx_sort)
+            sent = sent.index_select(1, Variable(idx_sort))
+
 
         # Handling padding in Recurrent Networks
         sent_packed = nn.utils.rnn.pack_padded_sequence(sent, sent_len.copy())
@@ -57,13 +65,18 @@ class BLSTMEncoder(nn.Module):
         sent_output = nn.utils.rnn.pad_packed_sequence(sent_output)[0]
 
         # Un-sort by length
-        idx_unsort = torch.from_numpy(idx_unsort).cuda() if self.is_cuda() \
-            else torch.from_numpy(idx_unsort)
-        sent_output = sent_output.index_select(1, Variable(idx_unsort).cuda())
+        if use_cuda:
+            idx_unsort = torch.from_numpy(idx_unsort).cuda()
+            sent_output = sent_output.index_select(1, Variable(idx_unsort)).cuda()
+        else:
+            idx_unsort = torch.from_numpy(idx_unsort)
+            sent_output = sent_output.index_select(1, Variable(idx_unsort))
 
         # Pooling
         if self.pool_type == "mean":
-            sent_len = Variable(torch.FloatTensor(sent_len)).unsqueeze(1).cuda()
+            sent_len = Variable(torch.FloatTensor(sent_len)).unsqueeze(1)
+            if use_cuda:
+                sent_len = sent_len.cuda()
             emb = torch.sum(sent_output, 0).squeeze(0)
             emb = emb / sent_len.expand_as(emb)
         elif self.pool_type == "max":
@@ -207,8 +220,8 @@ class BLSTMEncoder(nn.Module):
         for stidx in range(0, len(sentences), bsize):
             batch = Variable(self.get_batch(
                         sentences[stidx:stidx + bsize]), volatile=True)
-            if self.is_cuda():
-                batch = batch.cuda()
+            if self.use_cuda:
+               batch = batch.cuda()
             batch = self.forward(
                 (batch, lengths[stidx:stidx + bsize])).data.cpu().numpy()
             embeddings.append(batch)
@@ -269,10 +282,12 @@ class BGRUlastEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                bidirectional=True, dropout=self.dpout_model)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
                                   self.enc_lstm_dim).zero_()).cuda()
@@ -314,10 +329,12 @@ class BLSTMprojEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
                                   self.enc_lstm_dim).zero_()).cuda()
@@ -374,10 +391,12 @@ class LSTMEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=False, dropout=self.dpout_model)
         self.init_lstm = Variable(torch.FloatTensor(1, self.bsize,
             self.enc_lstm_dim).zero_()).cuda()
@@ -418,10 +437,12 @@ class GRUEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim =  config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                bidirectional=False, dropout=self.dpout_model)
         self.init_lstm = Variable(torch.FloatTensor(1, self.bsize,
             self.enc_lstm_dim).zero_()).cuda()
@@ -464,10 +485,11 @@ class InnerAttentionNAACLEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
+        self.use_cuda = config['use_cuda']
 
-
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
                                   self.enc_lstm_dim).zero_()).cuda()
@@ -543,9 +565,11 @@ class InnerAttentionMILAEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim =  config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
                                   self.enc_lstm_dim).zero_()).cuda()
@@ -639,9 +663,11 @@ class InnerAttentionYANGEncoder(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
+        self.use_cuda = config['use_cuda']
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
             self.enc_lstm_dim).zero_()).cuda()
@@ -722,6 +748,7 @@ class ConvNetEncoder(nn.Module):
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.pool_type = config['pool_type']
+        self.use_cuda = config['use_cuda']
 
         self.convnet1 = nn.Sequential(
             nn.Conv1d(self.word_emb_dim, 2*self.enc_lstm_dim, kernel_size=3,
@@ -788,6 +815,7 @@ class NLINet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
 
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 4*2*self.enc_lstm_dim
@@ -836,6 +864,7 @@ class PDTBNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
      
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
@@ -891,6 +920,7 @@ class PDTBNee(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
      
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
@@ -959,6 +989,7 @@ class AsNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
      
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
@@ -1007,6 +1038,7 @@ class AscNet(nn.Module):
         self.n_classes = 2
         self.dpout_fc = config['dpout_fc']
         self.inputdim = 64
+        self.use_cuda = config['use_cuda']
 
         if self.nonlinear_fc:
             self.classifier = nn.Sequential(
@@ -1046,6 +1078,7 @@ class ClassificationNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
 
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim
@@ -1078,6 +1111,7 @@ class PDTBNetc(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
      
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
@@ -1128,13 +1162,16 @@ class BLSTMEncoderc(nn.Module):
         self.bsize = config['bsize']
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
+        self.use_cuda = config['use_cuda']
+
         self.embeddings=nn.Embedding(108,config['char_emb_dim']) 
-        self.char_lstm = nn.LSTM(config['char_emb_dim'], config['char_rep_dim'], 1,
+        self.char_lstm = nn.LSTM(config['char_emb_dim'], config['char_rep_dim'], self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
 
-        self.enc_lstm = nn.LSTM(self.word_emb_dim+2*config['char_rep_dim'], self.enc_lstm_dim, 1,
+        self.enc_lstm = nn.LSTM(self.word_emb_dim+2*config['char_rep_dim'], self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
 
     def is_cuda(self):
@@ -1150,9 +1187,13 @@ class BLSTMEncoderc(nn.Module):
         sent_len, idx_sort = np.sort(sent_len)[::-1], np.argsort(-sent_len)
         idx_unsort = np.argsort(idx_sort)
 
-        idx_sort = torch.from_numpy(idx_sort).cuda() if self.is_cuda() \
-            else torch.from_numpy(idx_sort)
-        sent = sent.index_select(1, Variable(idx_sort).cuda())
+        if self.use_cuda:
+            idx_sort = torch.from_numpy(idx_sort).cuda()
+            sent = sent.index_select(1, Variable(idx_sort))
+        else:
+            idx_sort = torch.from_numpy(idx_sort).cuda()
+            sent = sent.index_select(1, Variable(idx_sort))
+
 #        print('sent')
         
  #       print(sent)
@@ -1194,7 +1235,11 @@ class BLSTMEncoderc(nn.Module):
 #        print('sent')
 #        print(sent)
 #        print(Variable(torch.LongTensor(uuuua).cuda()).view(-1,1,1).repeat(1, 1,char_output.size(2))-1)
-        char_output=torch.gather(char_output,1,Variable(torch.LongTensor(uuuua).cuda()).view(-1,1,1).repeat(1, 1,char_output.size(2))-1)
+        if self.use_cuda:
+            char_output=torch.gather(char_output,1,Variable(torch.LongTensor(uuuua).cuda()).view(-1,1,1).repeat(1, 1,char_output.size(2))-1)
+        else:
+            char_output=torch.gather(char_output,1,Variable(torch.LongTensor(uuuua)).view(-1,1,1).repeat(1, 1,char_output.size(2))-1)
+
         #char_output=char_output.index_select(1,Variable(torch.LongTensor(uuuua).cuda()))
 #        print('char_output')
 #        print(char_output)
@@ -1213,13 +1258,17 @@ class BLSTMEncoderc(nn.Module):
         sent_output = nn.utils.rnn.pad_packed_sequence(sent_output)[0]
 
         # Un-sort by length
-        idx_unsort = torch.from_numpy(idx_unsort).cuda() if self.is_cuda() \
-            else torch.from_numpy(idx_unsort)
-        sent_output = sent_output.index_select(1, Variable(idx_unsort).cuda())
+        if self.use_cuda:
+            idx_unsort =  torch.from_numpy(idx_unsort).cuda()
+            sent_output = sent_output.index_select(1, Variable(idx_unsort)).cuda()
+        else:
+            idx_unsort =  torch.from_numpy(idx_unsort)
+            sent_output = sent_output.index_select(1, Variable(idx_unsort))
+
 
         # Pooling
         if self.pool_type == "mean":
-            sent_len = Variable(torch.FloatTensor(sent_len)).unsqueeze(1).cuda()
+            sent_len = Variable(torch.FloatTensor(sent_len)).unsqueeze(1)
             emb = torch.sum(sent_output, 0).squeeze(0)
             emb = emb / sent_len.expand_as(emb)
         elif self.pool_type == "max":
@@ -1422,8 +1471,10 @@ class PDTBNetdd(nn.Module):
         self.fc_dim = config['fc_dim']
         self.n_classes = 2
         self.enc_lstm_dim = config['enc_lstm_dim']
+        self.n_enc_layers = config['n_enc_layers']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
+        self.use_cuda = config['use_cuda']
      
         self.encoder = eval(self.encoder_type)(config)
         dpout_modell=config['dpout_model']
