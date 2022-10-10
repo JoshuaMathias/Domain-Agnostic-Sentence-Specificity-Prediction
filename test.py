@@ -360,7 +360,7 @@ def evaluate(epoch, eval_type='valid', final_eval=False):
 Train model on Natural Language Inference task
 """
 epoch = 1
-pdtb_net2 = torch.load('savedir/3os'+params.outputmodelname)
+pdtb_net2 = torch.load('savedir/unsupervised_'+params.outputmodelname)
 
 print('\nTEST : Epoch {0}'.format(epoch))
 evaluate(0, 'test', True)

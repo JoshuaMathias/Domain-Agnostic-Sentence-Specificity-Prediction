@@ -499,9 +499,10 @@ for jpp in range (params.sss):
 print('\nTEST : Epoch {0}'.format(epoch))
 
 # Save encoder instead of full model
-print('train.py: Saving model encoder at ', os.path.join(params.outputdir, params.outputmodelname))
-torch.save(pdtb_net,
-           os.path.join(params.outputdir, params.outputmodelname))
-print('train.py: Saving model encoder at ', os.path.join(params.outputdir, '3os'+params.outputmodelname))
-torch.save(pdtb_net2,
-           os.path.join(params.outputdir, '3os'+params.outputmodelname)) 
+model_filename = os.path.join(params.outputdir, 'supervised_'+params.outputmodelname)
+print('train.py: Saving supervised model encoder at ', model_filename)
+torch.save(pdtb_net, model_filename)
+
+model_filename = os.path.join(params.outputdir, 'unsupervised_'+params.outputmodelname)
+print('train.py: Saving unsupervised (fine-tuned) model encoder at ', model_filename)
+torch.save(pdtb_net2, model_filename) 
