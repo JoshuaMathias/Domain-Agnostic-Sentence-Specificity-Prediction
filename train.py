@@ -103,8 +103,6 @@ if params.wed==300:
 
 # set gpu device
 if params.use_gpu:
-    raise Exception("use gpu:", params.use_gpu)
-if params.use_gpu:
     torch.cuda.set_device(params.gpu_id)
 
 # print parameters passed, and all parameters
