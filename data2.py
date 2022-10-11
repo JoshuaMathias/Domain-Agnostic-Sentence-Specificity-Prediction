@@ -88,7 +88,7 @@ def get_nli(data_path):
 def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
     """
     Args:
-        - supervised_data_name (str): This is used for the supervised portion of the training. See data.txt and label.txt for an example.
+        - supervised_data_name (str): This is used for the supervised portion of the training. If "news", it will use the files data_path/news_sentences.txt and data_path/news_labels.txt.
         - unsupervised_data_name (str): One of 'twitter', 'yelp', 'movie'
             or another you define and add files for.
             Will be used to identify data files.
