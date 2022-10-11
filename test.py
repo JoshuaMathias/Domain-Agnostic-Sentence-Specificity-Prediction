@@ -28,7 +28,7 @@ parser.add_argument("--nlipath", type=str, default='dataset/data/', help="NLI da
 parser.add_argument("--unsupervised_data_name", type=str, default="twitter", help="The domain to adapt to using unsupervised training. Will search for {unsupervised_data_name}_sentences.txt and {unsupervised_data_name}_ratings.txt")
 parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
-parser.add_argument("--outputmodelname", type=str, default='model.pickle')
+parser.add_argument("--output_model_name", type=str, default='model.pickle')
 parser.add_argument("--c", type=float, default='1000')
 parser.add_argument("--c2", type=float, default='100')
 parser.add_argument("--tv", type=int, default='1')
@@ -360,7 +360,7 @@ def evaluate(epoch, eval_type='valid', final_eval=False):
 Train model on Natural Language Inference task
 """
 epoch = 1
-pdtb_net2 = torch.load('savedir/unsupervised_'+params.outputmodelname)
+pdtb_net2 = torch.load('savedir/unsupervised_'+params.output_model_name)
 
 print('\nTEST : Epoch {0}'.format(epoch))
 evaluate(0, 'test', True)

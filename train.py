@@ -30,7 +30,7 @@ parser.add_argument("--supervised_data_name", type=str, default="news", help="La
 parser.add_argument("--unsupervised_data_name", type=str, default="twitter", help="The domain to adapt to using unsupervised training. Will search for {unsupervised_data_name}_sentences.txt and {unsupervised_data_name}_ratings.txt")
 parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
-parser.add_argument("--outputmodelname", type=str, default='model.pickle')
+parser.add_argument("--output_model_name", type=str, default='model.pickle')
 parser.add_argument("--c", type=float, default='1000')
 parser.add_argument("--c2", type=float, default='100')
 parser.add_argument("--tv", type=int, default='1')
@@ -499,10 +499,10 @@ for jpp in range (params.sss):
 print('\nTEST : Epoch {0}'.format(epoch))
 
 # Save encoder instead of full model
-model_filename = os.path.join(params.outputdir, 'supervised_'+params.outputmodelname)
+model_filename = os.path.join(params.outputdir, 'model-supervised_'+params.output_model_name)
 print('train.py: Saving supervised model encoder at ', model_filename)
 torch.save(pdtb_net, model_filename)
 
-model_filename = os.path.join(params.outputdir, 'unsupervised_'+params.outputmodelname)
+model_filename = os.path.join(params.outputdir, 'model-unsupervised_'+params.output_model_name)
 print('train.py: Saving unsupervised (fine-tuned) model encoder at ', model_filename)
 torch.save(pdtb_net2, model_filename) 
