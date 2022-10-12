@@ -26,7 +26,7 @@ parser = argparse.ArgumentParser(description='NLI training')
 # paths
 parser.add_argument("--use_gpu", action='store_true', help="Specify this argument (--use_gpu with nothing after) to use GPU with cuda instead of CPU.")
 parser.add_argument("--nlipath", type=str, default='dataset/data/', help="NLI data path (SNLI or MultiNLI)")
-parser.add_argument("--supervised_data_name", type=str, default="news", help="Labeled data for for supervised training. Will search for {supervised_data_name}_data.txt and {supervised_data_name}_label.txt")
+parser.add_argument("--supervised_data_name", type=str, default="news", help="Labeled data for for supervised training. Will search for {supervised_data_name}_sentences.txt and {supervised_data_name}_label.txt")
 parser.add_argument("--unsupervised_data_name", type=str, default="twitter", help="The domain to adapt to using unsupervised training. Will search for {unsupervised_data_name}_sentences.txt and {unsupervised_data_name}_ratings.txt")
 parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
@@ -166,7 +166,7 @@ def getFeatures(fin):
     return y,xs
 
 train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name)
-_,xsl = getFeatures(os.path.join(params.nlipath,f'{params.supervised_data_name}_data.txt'))
+_,xsl = getFeatures(os.path.join(params.nlipath,f'{params.supervised_data_name}_sentences.txt'))
 
 _,xst = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_sentences.txt'))
 _,xsu = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_unlabeled_sentences.txt'))

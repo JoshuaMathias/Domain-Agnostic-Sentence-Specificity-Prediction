@@ -104,15 +104,15 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
     for data_type in ['trainu','train','unlab','test']:
         s1[data_type], s2[data_type], target[data_type],targetv[data_type] = {},{}, {}, {}
     if supervised_data_name:
-        s1['train']['path'] = os.path.join(data_path, f'{supervised_data_name}_data.txt')
+        s1['train']['path'] = os.path.join(data_path, f'{supervised_data_name}_sentences.txt')
     
 
     s1['test']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_sentences.txt') # Sentences
     s1['unlab']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_unlabeled_sentences.txt') # Unlabeled sentences
     # Note: The data specified by the below target and targetv are not used except as dummy variables,
     # but if not provided or not existing there will be an error.
-    target['test']['path'] = 'dataset/data/twitterl.txt' # Specificity binary labels for sentences
-    targetv['test']['path'] = 'dataset/data/twitterv.txt' # Spelabelcificity ratings for sentences
+    target['test']['path'] = 'dataset/data/twitter_labels.txt' # Specificity binary labels for sentences
+    targetv['test']['path'] = 'dataset/data/twitter_ratings.txt' # Spelabelcificity ratings for sentences
 
     s1['trainu']['path'] = os.path.join(data_path, 'aaai15unlabeled/all.60000.sents')
 
