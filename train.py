@@ -406,7 +406,7 @@ def trainepoch(epoch):
             oop2=F.softmax(outputu, dim=1)
             loss3=0
             if params.use_gpu:
-                pppp=Variable(torch.FloatTensor([1/oop.size(0)]), cuda())
+                pppp=Variable(torch.FloatTensor([1/oop.size(0)]).cuda())
             else:
                 pppp=Variable(torch.FloatTensor([1/oop.size(0)]))
             dmiu=torch.mean(oop2[:,1])
