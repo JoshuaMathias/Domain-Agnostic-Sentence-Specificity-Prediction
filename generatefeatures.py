@@ -151,12 +151,14 @@ class ModelNewText(object):
         word_vectors = self.word_vectors
 
         # Load word vectors.
-        with open(word_vectors_path, encoding="utf8") as file:
-            for line in file:
-                word, vec = line.split(' ', 1)
-                if word:
-                    word_vectors[word] = np.array(list(map(float, vec.split())))
-
+        if not self.word_vectors:
+            with open(word_vectors_path, encoding="utf8") as file:
+                print('ModelNewText: Loading word vectors from', word_vectors_path)
+                for line in file:
+                    word, vec = line.split(' ', 1)
+                    if word:
+                        word_vectors[word] = np.array(list(map(float, vec.split())))
+                print(f'ModelNewText: Loaded {len(word_vectors)} word vectors.')
         sentence_tokens = [sent.rawsent.getTokens() for sent in self.test]
         # Prepare a torch vector of the GloVe word vectors 
         # for the sentence and a vector of sentence lengths.
