@@ -169,5 +169,6 @@ class ModelNewText(object):
         feature_variable = Variable(feature_vector)
         if use_gpu:
             feature_variable = feature_variable.cuda()
+            sentence_embeddings = sentence_embeddings.cuda()
         
         return (sentence_embeddings, sentence_lens), feature_variable
