@@ -290,7 +290,9 @@ class BGRUlastEncoder(nn.Module):
         self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                bidirectional=True, dropout=self.dpout_model)
         self.init_lstm = Variable(torch.FloatTensor(2, self.bsize,
-                                  self.enc_lstm_dim).zero_()).cuda()
+                                  self.enc_lstm_dim).zero_())
+        if self.use_cuda:
+            self.init_lstm = self.init_lstm.cuda()
 
     def forward(self, sent_tuple):
         # sent_len: [max_len, ..., min_len] (batch)
@@ -300,11 +302,16 @@ class BGRUlastEncoder(nn.Module):
         bsize = sent.size(1)
 
         self.init_lstm = self.init_lstm if bsize == self.init_lstm.size(1) else \
-                Variable(torch.FloatTensor(2, bsize, self.enc_lstm_dim).zero_()).cuda()
+                Variable(torch.FloatTensor(2, bsize, self.enc_lstm_dim).zero_())
+        if self.usa_cuda:
+            self.init_lstm = self.init_lstm.cuda()
 
         # Sort by length (keep idx)
         sent_len, idx_sort = np.sort(sent_len)[::-1], np.argsort(-sent_len)
-        sent = sent.index_select(1, Variable(torch.cuda.LongTensor(idx_sort)).cuda())
+        if self.use_cuda:
+            sent = sent.index_select(1, Variable(torch.cuda.LongTensor(idx_sort)).cuda())
+        else:
+            sent = sent.index_select(1, Variable(torch.cuda.LongTensor(idx_sort)))
 
         # Handling padding in Recurrent Networks
         sent_packed = nn.utils.rnn.pack_padded_sequence(sent, sent_len)
@@ -313,7 +320,10 @@ class BGRUlastEncoder(nn.Module):
 
         # Un-sort by length
         idx_unsort = np.argsort(idx_sort)
-        emb = emb.index_select(0, Variable(torch.cuda.LongTensor(idx_unsort)).cuda())
+        if self.use_cuda:
+            emb = emb.index_select(0, Variable(torch.cuda.LongTensor(idx_unsort)).cuda())
+        else:
+            emb = emb.index_select(0, Variable(torch.cuda.LongTensor(idx_unsort)))
 
         return emb
 
