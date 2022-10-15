@@ -9,18 +9,23 @@ import os.path
 import features
 import utils
 import numpy as np
+from data2 import get_batch
+import torch
+from torch.autograd import Variable
 
 Instance = namedtuple("Instance","uid,label,rawsent")
 
 class ModelNewText(object):
 
-    def __init__(self, brnspace, brnclst, embeddings):
+    def __init__(self, brnspace=None, brnclst=None, embeddings=None, tokenizer="split"):
         self.featurestest = {} ## <name, flist>
         self.test = []
         self.brnclst = brnclst
         self.brnspace = brnspace
         self.embeddings = embeddings
         self.fileid = None
+        self.word_vectors = {}
+        self.tokenizer = tokenizer
 
     def loadFromFile(self,filename):
         self.test = []
@@ -31,7 +36,7 @@ class ModelNewText(object):
                 if len(line.strip()) == 0: 
                     print(i)
                     #continue
-                self.test.append(Instance(self.fileid+"."+str(i),0,features.RawSent(line.strip())))
+                self.test.append(Instance(self.fileid+"."+str(i),0,features.RawSent(line.strip(), tokenizer=self.tokenizer)))
                 i += 1
         f.close()
 
@@ -41,8 +46,8 @@ class ModelNewText(object):
         self.test = []
         self.fileid = identifier
         for i,sent in enumerate(sentlist):
-            sent="".join(sent[1:-1])
-            self.test.append(Instance(identifier+"."+str(i),0,features.RawSent(sent)))
+            # sent="".join(sent[1:-1])
+            self.test.append(Instance(identifier+"."+str(i),0,features.RawSent(sent, tokenizer=self.tokenizer)))
             
     def _add_feature(self, key, values):
         if key in self.featurestest: return
@@ -111,3 +116,56 @@ class ModelNewText(object):
         for i,item in enumerate(self.featurestest["brnclst1gram"]):
             xs[i].update(self.brnspace.toFeatDict(item,False))
         return ys,xs
+
+    def __call__(self, sentences: list, word_vectors_path: str='glove.840B.300d.txt', use_gpu: str=True):
+        """
+        Given sentences to score for specificity, 
+        return what is expected as input features to the model.
+
+        Args:
+            - sentences (list of str)
+            - word_vectors_path (str): For example, glove.840B.300d.txt
+            - use_gpu (bool): If True, will use GPU/cuda.
+
+        Returns:
+            - sentence_embeddings
+            - sentence_lens
+            - feature_variable
+
+            The above are returned as follows:
+            - (sentence_embeddings, sentence_lens), feature_variables
+            Because this is what the model expects as input.
+        """
+        if isinstance(sentences, str):
+            sentences = [sentences]
+        # Ensure there's no carry over of data from previous calls.
+        self.test = []
+        self.featurestest = {}
+        # Prepare and store in memory features for the sentences loaded.
+        self.loadSentences("new", sentences)
+        self.fShallow()
+        # Turn the features into a numpy vector.
+        labels, features = self.transformShallow()
+
+        # Turn the features into a numpy vector.
+        word_vectors = self.word_vectors
+
+        # Load word vectors.
+        with open(word_vectors_path, encoding="utf8") as file:
+            for line in file:
+                word, vec = line.split(' ', 1)
+                if word:
+                    word_vectors[word] = np.array(list(map(float, vec.split())))
+
+        sentence_tokens = [sent.rawsent.getTokens() for sent in self.test]
+        # Prepare a torch vector of the GloVe word vectors 
+        # for the sentence and a vector of sentence lengths.
+        sentence_embeddings, sentence_lens = get_batch(sentence_tokens, word_vectors, 300)
+
+        # Prepare Torch Variable for the features.
+        feature_vector = torch.from_numpy(features).float()
+        feature_variable = Variable(feature_vector)
+        if use_gpu:
+            feature_variable = feature_variable.cuda()
+        
+        return (sentence_embeddings, sentence_lens), feature_variable

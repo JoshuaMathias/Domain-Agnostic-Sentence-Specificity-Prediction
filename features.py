@@ -2,6 +2,7 @@
 
 from collections import namedtuple, defaultdict
 from numpy import mean, zeros
+from nltk.tokenize import word_tokenize
 
 import utils
 
@@ -215,9 +216,12 @@ class Space:
 ## sentence object
 class RawSent:
 
-    def __init__(self, senttxt):
+    def __init__(self, senttxt, tokenizer="split"):
         ## tokenized sentence format
-        self.tokens = senttxt.split()
+        if tokenizer == "split":
+            self.tokens = senttxt.split()
+        elif tokenizer == "nltk":
+            self.tokens = word_tokenize(senttxt)
 
     def getNumTokens(self):
         return len(self.tokens)

@@ -12,7 +12,10 @@ def get_batch(batch, word_vec,wed):
 
     for i in range(len(batch)):
         for j in range(len(batch[i])):
-            embed[j, i, :] = word_vec[batch[i][j]]
+            try:
+                embed[j, i, :] = word_vec[batch[i][j]]
+            except KeyError:
+                pass
 
     return torch.from_numpy(embed).float(), lengths
 
