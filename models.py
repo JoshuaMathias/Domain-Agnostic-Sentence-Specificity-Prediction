@@ -821,7 +821,7 @@ class NLINet(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 3
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
@@ -870,7 +870,7 @@ class PDTBNet(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 2
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
@@ -926,7 +926,7 @@ class PDTBNee(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 2
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
@@ -995,7 +995,7 @@ class AsNet(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 64
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
@@ -1045,7 +1045,7 @@ class AscNet(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 2
+        self.n_classes = config['n_classes']
         self.dpout_fc = config['dpout_fc']
         self.inputdim = 64
         self.use_cuda = config['use_cuda']
@@ -1117,7 +1117,7 @@ class PDTBNetc(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 2
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
@@ -1479,7 +1479,7 @@ class PDTBNetdd(nn.Module):
         # classifier
         self.nonlinear_fc = config['nonlinear_fc']
         self.fc_dim = config['fc_dim']
-        self.n_classes = 2
+        self.n_classes = config['n_classes']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.n_enc_layers = config['n_enc_layers']
         self.encoder_type = config['encoder_type']
