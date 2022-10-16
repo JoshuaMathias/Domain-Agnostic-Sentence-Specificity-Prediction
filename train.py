@@ -48,7 +48,7 @@ parser.add_argument("--md", type=int, default='0')
 # training
 parser.add_argument("--n_epochs", type=int, default=5)
 parser.add_argument("--esize", type=int, default=4342)
-parser.add_argument("--dom", type=int, default=1)
+parser.add_argument("--dom", type=int, default=1, help="If this is 2, the data will be cut off after 2000 samples")
 parser.add_argument("--norm", type=int, default=1)
 
 parser.add_argument("--batch_size", type=int, default=32)
@@ -165,7 +165,7 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name)
+train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name,num_classes=params.n_classes)
 _,xsl = getFeatures(os.path.join(params.nlipath,f'{params.supervised_data_name}_sentences.txt'))
 
 _,xst = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_sentences.txt'))

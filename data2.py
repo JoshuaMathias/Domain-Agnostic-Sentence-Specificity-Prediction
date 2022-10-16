@@ -88,7 +88,7 @@ def get_nli(data_path):
             'label': target['test']['data']}
     return train, dev, test
     
-def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
+def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,num_classes=n_classes):
     """
     Args:
         - supervised_data_name (str): This is used for the supervised portion of the training. If "news", it will use the files data_path/news_sentences.txt and data_path/news_labels.txt.
@@ -102,7 +102,10 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
     
     targetv = {}
     
-    dico_label = {'1': 0,  '2': 1}
+    # A label of 1 will be used as a 0, 2 as a 1, etc.
+    dico_label = {}
+    for i in range(num_classes):
+        dico_label[str(i+1)] = i
     
     for data_type in ['trainu','train','unlab','test']:
         s1[data_type], s2[data_type], target[data_type],targetv[data_type] = {},{}, {}, {}
@@ -114,8 +117,8 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None):
     s1['unlab']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_unlabeled_sentences.txt') # Unlabeled sentences
     # Note: The data specified by the below target and targetv are not used except as dummy variables,
     # but if not provided or not existing there will be an error.
-    target['test']['path'] = 'dataset/data/twitter_labels.txt' # Specificity binary labels for sentences
-    targetv['test']['path'] = 'dataset/data/twitter_ratings.txt' # Spelabelcificity ratings for sentences
+    target['test']['path'] = os.path.join(data_path,f'{supervised_data_name}_labels.txt') # Specificity binary labels for sentences
+    targetv['test']['path'] = os.path.join(data_path,f'{supervised_data_name}_ratings.txt') # Specificity ratings for sentences
 
     s1['trainu']['path'] = os.path.join(data_path, 'aaai15unlabeled/all.60000.sents')
 
