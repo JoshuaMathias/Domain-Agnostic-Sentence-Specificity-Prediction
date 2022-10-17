@@ -46,14 +46,13 @@ parser.add_argument("--md", type=int, default='0')
 
 
 # training
-parser.add_argument("--n_epochs", type=int, default=5)
-parser.add_argument("--esize", type=int, default=4342)
+parser.add_argument("--n_epochs", type=int, default=31, help="Total number of training epochs (iterations through all the data).")
+parser.add_argument("--se_epochs", type=int, default=4, help="Number of epochs to do self-ensembling.")
+parser.add_argument("--epoch_size", type=int, default=None, help="Max number of samples in the training data.")
 parser.add_argument("--dom", type=int, default=1, help="If this is 2, the data will be cut off after 2000 samples")
 parser.add_argument("--norm", type=int, default=1)
 
 parser.add_argument("--batch_size", type=int, default=32)
-parser.add_argument("--se", type=int, default=4)
-parser.add_argument("--me", type=int, default=31)
 
 parser.add_argument("--dpout_model", type=float, default=0.5, help="encoder dropout")
 parser.add_argument("--dpout_fc", type=float, default=0.5, help="classifier dropout")
@@ -83,20 +82,18 @@ parser.add_argument("--uss", type=int, default='5000', help="max or mean")
 parser.add_argument("--uss2", type=int, default='5000', help="max or mean")
 
 parser.add_argument("--sss", type=int, default='50', help="max or mean")
-parser.add_argument("--ne0", type=int, default='100', help="max or mean")
 
 # gpu
 parser.add_argument("--gpu_id", type=int, default=1, help="GPU ID")
 parser.add_argument("--seed", type=int, default=1234, help="seed")
 parser.add_argument("--wed", type=int, default=300, help="seed")
-parser.add_argument("--bb", type=int, default=0, help="seed")
 parser.add_argument("--eeps", type=float, default=0.1, help="seed")
 
 
 
 
 params, _ = parser.parse_known_args()
-if  params.unsupervised_data_name=='pdtb':
+if params.unsupervised_data_name=='pdtb':
     params.esize=2784
 if params.wed==300:
     GLOVE_PATH = params.glove_path
@@ -319,8 +316,10 @@ def trainepoch(epoch):
     optimizer.param_groups[0]['lr'] = optimizer.param_groups[0]['lr'] * params.decay if epoch>1\
         and 'sgd' in params.optimizer else optimizer.param_groups[0]['lr']
     print('Learning rate : {0}'.format(optimizer.param_groups[0]['lr']))
-
-    for stidx in range(0, params.esize, params.batch_size):
+    epoch_size = len(s1)
+    if params.epoch_size is not None and params.epoch_size < epoch_size:
+        epoch_size = params.epoch_size
+    for stidx in range(0, epoch_size, params.batch_size):
     
         s1_batch, s1_len = get_batch_aug(s1[stidx:stidx + params.batch_size],
                                      word_vec)
@@ -419,7 +418,7 @@ def trainepoch(epoch):
             loss1 = loss_fn(oop, tgt_batch.float())
         else:
             loss1 = loss_fn(output[:,0], (tgt_batch*2-1).float())
-        if epoch>=params.se:
+        if epoch>=params.se_epochs:
             loss=loss1+params.c*loss2+params.c2*loss3
         else:
             loss=loss1+params.c2*loss3
@@ -475,26 +474,12 @@ def trainepoch(epoch):
 """
 Train model on Natural Language Inference task
 """
-epoch = 1
-for jpp in range (params.sss):
-    epochh = 1
-    gg=params.ne0
-    while not stop_training and epochh <= gg:
-        if params.bb==1:    
-            train_acc = trainepochb(epoch)
-        else:
-            train_acc = trainepoch(epoch)
-        epoch += 1
-        if epoch== params.me:
-            stop_training=1
-            #fffa=open('opt'+params.unsupervised_data_name+str(params.c)+'ll'+str(params.c2)+'ll'+str(params.gnoise2)+'.txt','w')                                        
-            #for ee in range(q.size(0)):
-            #    fffa.write(str(q.data[ee,1])+'\n')
-            #fffa.close()
-        epochh+=1
-    gg=params.n_epochs
+epoch = 0
+while epoch < params.n_epochs:
+    train_acc = trainepoch(epoch)
+    epoch += 1
 
-print('\nTEST : Epoch {0}'.format(epoch))
+print('\nEpochs completed: {0}'.format(epoch))
 
 # Save encoder instead of full model
 model_filename = os.path.join(params.outputdir, 'model-supervised_'+params.output_model_name)

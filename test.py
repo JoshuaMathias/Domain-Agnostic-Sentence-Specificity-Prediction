@@ -360,13 +360,11 @@ def evaluate(epoch, eval_type='valid', final_eval=False):
 """
 Train model on Natural Language Inference task
 """
-epoch = 1
 # Note: pdtb_net refers to the class PDTBNet in models.py, but the encoder property of that class
 # is set to another model class in models.py, whichever class
 # from models.py which was used when training the model that is being loaded.
 # This class name was set as the encoder_type parameter when running train.py.
 pdtb_net2 = torch.load('savedir/unsupervised_'+params.output_model_name)
 
-print('\nTEST : Epoch {0}'.format(epoch))
 evaluate(0, 'test', True)
 # Save encoder instead of full model
