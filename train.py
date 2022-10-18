@@ -326,149 +326,148 @@ def trainepoch(epoch):
                                          word_vec)
             s1_batch2, s1_len2 = get_batch_aug(s1[stidx:stidx + params.batch_size],
                                          word_vec)
+        
+            s1_batchf=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
+            s1_batchf2=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
+            
+            su_batch, su_len = get_batch_aug(s_u[stidx:stidx + params.batch_size],
+                                         word_vec)
+            su_batchf=torch.from_numpy(suf[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
+            su_batch2, su_len2 = get_batch_aug(s_u[stidx:stidx + params.batch_size],
+                                         word_vec)
+            su_batchf2=torch.from_numpy(suf[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
+            if config_nli_model['use_cuda']:
+                s1_batch= Variable(s1_batch).cuda()*params.wf
+                s1_batchf= Variable(s1_batchf).cuda()
+                s1_batch2= Variable(s1_batch2).cuda()*params.wf
+                s1_batchf2= Variable(s1_batchf2).cuda()
+                su_batch= Variable(su_batch).cuda()*params.wf
+                su_batchf= Variable(su_batchf).cuda()
+                su_batchf2= Variable(su_batchf2).cuda()
+                
+                su_batch2= Variable(su_batch2).cuda()*params.wf
+                tgt_batch = Variable(torch.FloatTensor(target[stidx:stidx + params.batch_size])).cuda()
+            else:
+                s1_batch= Variable(s1_batch)*params.wf
+                s1_batchf= Variable(s1_batchf)
+                s1_batch2= Variable(s1_batch2)*params.wf
+                s1_batchf2= Variable(s1_batchf2)
+
+                su_batch= Variable(su_batch)*params.wf
+                su_batchf= Variable(su_batchf)
+                su_batchf2= Variable(su_batchf2)
+                
+                su_batch2= Variable(su_batch2)*params.wf
+                tgt_batch = Variable(torch.FloatTensor(target[stidx:stidx + params.batch_size]))
+            k = s1_batch.size(1)  # actual batch size
+            output = pdtb_net((s1_batch, s1_len),s1_batchf)
+            output2 = pdtb_net((s1_batch2, s1_len2),s1_batchf2)
+            outputu = pdtb_net((su_batch, su_len),su_batchf)
+            outputu2 = pdtb_net2((su_batch2, su_len2),su_batchf2)
+            if params.loss==0:
+                pred = output.data.max(1)[1]
+            else:
+                pred=output.data[:,0]>0
+            
+
+            assert len(pred) == len(s1[stidx:stidx + params.batch_size])
+            if params.loss==0:
+                ou = F.softmax(outputu, dim=1)
+                
+                ou2 = F.softmax(outputu2, dim=1)
+                sou = F.softmax(output, dim=1)
+                
+                sou2 = F.softmax(output2, dim=1)
+     
+                a,_=torch.max(ou,1)
+                sa,_=torch.max(sou,1)
+
+                a=(a.detach()>params.th).view(-1,1).float()
+                sa=(sa.detach()>params.th).view(-1,1).float()
+                ou=ou*  torch.cat((a,a), 1)
+                ou2=ou2*  torch.cat((a,a), 1)
+                sou=sou*  torch.cat((sa,sa), 1)
+                sou2=sou2*  torch.cat((sa,sa), 1)
+            
+            else:
+                ou=outputu[:,0]
+                ou2=outputu2[:,0]
+                a=(ou.detach()>params.th).view(-1,1).float()
+                ou=ou*  a
+                ou2=ou2* a
+
+            ou2.require_grad=False
+            sou2.require_grad=False
+            loss2=( F.mse_loss(ou, ou2.detach(), size_average=False)+F.mse_loss(sou, sou2.detach(), size_average=False)) / params.n_classes/params.batch_size
+            # loss
+            if params.loss==0:
+                tgt_batch=torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
+                oop=F.softmax(output, dim=1)
+                oop2=F.softmax(outputu, dim=1)
+                loss3=0
+                if params.use_gpu:
+                    pppp=Variable(torch.FloatTensor([1/oop.size(0)]).cuda())
+                else:
+                    pppp=Variable(torch.FloatTensor([1/oop.size(0)]))
+                dmiu=torch.mean(oop2[:,1])
+                dstd=torch.std(oop2[:,1])
+                loss3=loss3+torch.abs(torch.mean(oop2[:,1])-params.klmiu)+torch.abs(torch.std(oop2[:,1])-params.klsig)
+                
+                kss=float(params.klsig)
+                
+                
+                loss1 = loss_fn(oop, tgt_batch.float())
+            else:
+                loss1 = loss_fn(output[:,0], (tgt_batch*2-1).float())
+            if epoch>=params.se_epoch_start:
+                loss=loss1+params.c*loss2+params.c2*loss3
+            else:
+                loss=loss1+params.c2*loss3
+            all_costs.append(loss.item())
+            words_count += (s1_batch.nelement()) / params.word_emb_dim
+
+            # backward
+            optimizer.zero_grad()
+            loss.backward()
+            
+            # gradient clipping (off by default)
+            shrink_factor = 1
+            total_norm = 0
+
+            for p in pdtb_net.parameters():
+                if p.requires_grad:
+                    p.grad.data.div_(k)  # divide by the actual batch size
+                    total_norm += p.grad.data.norm() ** 2
+            total_norm = np.sqrt(total_norm.cpu())
+
+            if total_norm > params.max_norm:
+                shrink_factor = params.max_norm / total_norm
+            current_lr = optimizer.param_groups[0]['lr'] # current lr (no external "lr", for adam)
+            optimizer.param_groups[0]['lr'] = current_lr * shrink_factor # just for update
+
+            # optimizer step
+            optimizer.step()
+            global global_step
+            global_step =global_step +1
+            gs=global_step
+            update_ema_variables(pdtb_net, pdtb_net2, params.d, gs)
+
+            optimizer.param_groups[0]['lr'] = current_lr
+            if len(all_costs) == 10:
+                logs.append('{0} ; loss {1} ; sentence/s {2} ; words/s {3} ; '.format(
+                                stidx, round(np.mean(all_costs), 2),
+                                int(len(all_costs) * params.batch_size / (time.time() - last_time)),
+                                int(words_count * 1.0 / (time.time() - last_time))))
+                print(logs[-1])
+                #print (loss3)
+
+                last_time = time.time()
+                words_count = 0
+                all_costs = []
         except ValueError:
             # ValueError: zero-size array to reduction operation maximum which has no identity
             # May happen at the end when the batch is too small.
             break
-        
-        s1_batchf=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
-        s1_batchf2=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
-        
-        su_batch, su_len = get_batch_aug(s_u[stidx:stidx + params.batch_size],
-                                     word_vec)
-        su_batchf=torch.from_numpy(suf[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
-        su_batch2, su_len2 = get_batch_aug(s_u[stidx:stidx + params.batch_size],
-                                     word_vec)
-        su_batchf2=torch.from_numpy(suf[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
-        if config_nli_model['use_cuda']:
-            s1_batch= Variable(s1_batch).cuda()*params.wf
-            s1_batchf= Variable(s1_batchf).cuda()
-            s1_batch2= Variable(s1_batch2).cuda()*params.wf
-            s1_batchf2= Variable(s1_batchf2).cuda()
-            su_batch= Variable(su_batch).cuda()*params.wf
-            su_batchf= Variable(su_batchf).cuda()
-            su_batchf2= Variable(su_batchf2).cuda()
-            
-            su_batch2= Variable(su_batch2).cuda()*params.wf
-            tgt_batch = Variable(torch.FloatTensor(target[stidx:stidx + params.batch_size])).cuda()
-        else:
-            s1_batch= Variable(s1_batch)*params.wf
-            s1_batchf= Variable(s1_batchf)
-            s1_batch2= Variable(s1_batch2)*params.wf
-            s1_batchf2= Variable(s1_batchf2)
-
-            su_batch= Variable(su_batch)*params.wf
-            su_batchf= Variable(su_batchf)
-            su_batchf2= Variable(su_batchf2)
-            
-            su_batch2= Variable(su_batch2)*params.wf
-            tgt_batch = Variable(torch.FloatTensor(target[stidx:stidx + params.batch_size]))
-        k = s1_batch.size(1)  # actual batch size
-        output = pdtb_net((s1_batch, s1_len),s1_batchf)
-        output2 = pdtb_net((s1_batch2, s1_len2),s1_batchf2)
-        outputu = pdtb_net((su_batch, su_len),su_batchf)
-        outputu2 = pdtb_net2((su_batch2, su_len2),su_batchf2)
-        if params.loss==0:
-            pred = output.data.max(1)[1]
-        else:
-            pred=output.data[:,0]>0
-        
-
-        assert len(pred) == len(s1[stidx:stidx + params.batch_size])
-        if params.loss==0:
-            ou = F.softmax(outputu, dim=1)
-            
-            ou2 = F.softmax(outputu2, dim=1)
-            sou = F.softmax(output, dim=1)
-            
-            sou2 = F.softmax(output2, dim=1)
- 
-            a,_=torch.max(ou,1)
-            sa,_=torch.max(sou,1)
-
-            a=(a.detach()>params.th).view(-1,1).float()
-            sa=(sa.detach()>params.th).view(-1,1).float()
-            ou=ou*  torch.cat((a,a), 1)
-            ou2=ou2*  torch.cat((a,a), 1)
-            sou=sou*  torch.cat((sa,sa), 1)
-            sou2=sou2*  torch.cat((sa,sa), 1)
-        
-        else:
-            ou=outputu[:,0]
-            ou2=outputu2[:,0]
-            a=(ou.detach()>params.th).view(-1,1).float()
-            ou=ou*  a
-            ou2=ou2* a
-
-        ou2.require_grad=False
-        sou2.require_grad=False
-        loss2=( F.mse_loss(ou, ou2.detach(), size_average=False)+F.mse_loss(sou, sou2.detach(), size_average=False)) / params.n_classes/params.batch_size
-        # loss
-        if params.loss==0:
-            tgt_batch=torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
-            oop=F.softmax(output, dim=1)
-            oop2=F.softmax(outputu, dim=1)
-            loss3=0
-            if params.use_gpu:
-                pppp=Variable(torch.FloatTensor([1/oop.size(0)]).cuda())
-            else:
-                pppp=Variable(torch.FloatTensor([1/oop.size(0)]))
-            dmiu=torch.mean(oop2[:,1])
-            dstd=torch.std(oop2[:,1])
-            loss3=loss3+torch.abs(torch.mean(oop2[:,1])-params.klmiu)+torch.abs(torch.std(oop2[:,1])-params.klsig)
-            
-            kss=float(params.klsig)
-            
-            
-            loss1 = loss_fn(oop, tgt_batch.float())
-        else:
-            loss1 = loss_fn(output[:,0], (tgt_batch*2-1).float())
-        if epoch>=params.se_epoch_start:
-            loss=loss1+params.c*loss2+params.c2*loss3
-        else:
-            loss=loss1+params.c2*loss3
-        all_costs.append(loss.item())
-        words_count += (s1_batch.nelement()) / params.word_emb_dim
-
-        # backward
-        optimizer.zero_grad()
-        loss.backward()
-        
-        # gradient clipping (off by default)
-        shrink_factor = 1
-        total_norm = 0
-
-        for p in pdtb_net.parameters():
-            if p.requires_grad:
-                p.grad.data.div_(k)  # divide by the actual batch size
-                total_norm += p.grad.data.norm() ** 2
-        total_norm = np.sqrt(total_norm.cpu())
-
-        if total_norm > params.max_norm:
-            shrink_factor = params.max_norm / total_norm
-        current_lr = optimizer.param_groups[0]['lr'] # current lr (no external "lr", for adam)
-        optimizer.param_groups[0]['lr'] = current_lr * shrink_factor # just for update
-
-        # optimizer step
-        optimizer.step()
-        global global_step
-        global_step =global_step +1
-        gs=global_step
-        update_ema_variables(pdtb_net, pdtb_net2, params.d, gs)
-
-        optimizer.param_groups[0]['lr'] = current_lr
-        if len(all_costs) == 10:
-            logs.append('{0} ; loss {1} ; sentence/s {2} ; words/s {3} ; '.format(
-                            stidx, round(np.mean(all_costs), 2),
-                            int(len(all_costs) * params.batch_size / (time.time() - last_time)),
-                            int(words_count * 1.0 / (time.time() - last_time))))
-            print(logs[-1])
-            #print (loss3)
-
-            last_time = time.time()
-            words_count = 0
-            all_costs = []
-    
     return 0
 
 
