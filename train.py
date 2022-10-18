@@ -321,10 +321,15 @@ def trainepoch(epoch):
         epoch_size = params.epoch_size
     for stidx in range(0, epoch_size, params.batch_size):
     
-        s1_batch, s1_len = get_batch_aug(s1[stidx:stidx + params.batch_size],
-                                     word_vec)
-        s1_batch2, s1_len2 = get_batch_aug(s1[stidx:stidx + params.batch_size],
-                                     word_vec)
+        try:
+            s1_batch, s1_len = get_batch_aug(s1[stidx:stidx + params.batch_size],
+                                         word_vec)
+            s1_batch2, s1_len2 = get_batch_aug(s1[stidx:stidx + params.batch_size],
+                                         word_vec)
+        except ValueError:
+            # ValueError: zero-size array to reduction operation maximum which has no identity
+            # May happen at the end when the batch is too small.
+            break
         
         s1_batchf=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
         s1_batchf2=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
