@@ -47,7 +47,7 @@ parser.add_argument("--md", type=int, default='0')
 
 # training
 parser.add_argument("--n_epochs", type=int, default=31, help="Total number of training epochs (iterations through all the data).")
-parser.add_argument("--se_epochs", type=int, default=4, help="Number of epochs to do self-ensembling.")
+parser.add_argument("--se_epoch_start", type=int, default=4, help="Epoch at which to start self-ensembling.")
 parser.add_argument("--epoch_size", type=int, default=None, help="Max number of samples in the training data.")
 parser.add_argument("--dom", type=int, default=1, help="If this is 2, the data will be cut off after 2000 samples")
 parser.add_argument("--norm", type=int, default=1)
