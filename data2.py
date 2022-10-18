@@ -88,7 +88,7 @@ def get_nli(data_path):
             'label': target['test']['data']}
     return train, dev, test
     
-def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,num_classes=n_classes):
+def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,num_classes=2):
     """
     Args:
         - supervised_data_name (str): This is used for the supervised portion of the training. If "news", it will use the files data_path/news_sentences.txt and data_path/news_labels.txt.

@@ -162,7 +162,7 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv)
+train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,params.n_classes)
 #train['label']=train['label']*0.8+0.1
 #print(train['label'])
 
