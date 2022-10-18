@@ -418,7 +418,7 @@ def trainepoch(epoch):
             loss1 = loss_fn(oop, tgt_batch.float())
         else:
             loss1 = loss_fn(output[:,0], (tgt_batch*2-1).float())
-        if epoch>=params.se_epochs:
+        if epoch>=params.se_epoch_start:
             loss=loss1+params.c*loss2+params.c2*loss3
         else:
             loss=loss1+params.c2*loss3
