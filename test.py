@@ -162,7 +162,7 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,params.n_classes)
+train, test, unlab, trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,params.n_classes)
 #train['label']=train['label']*0.8+0.1
 #print(train['label'])
 
@@ -202,7 +202,7 @@ if params.sptrain==1:
 #for split in ['s1', 's2']:
 
 for split in ['s1']:
-    for data_type in ['train', 'valid', 'test', 'unlab', 'trainu']:
+    for data_type in ['train', 'test', 'unlab', 'trainu']:
         eval(data_type)[split] = np.array([['<s>'] +
             [word for word in sent.split() if word in word_vec] 
             #+            ['</s>']
@@ -306,7 +306,7 @@ def update_ema_variables(model, ema_model, alpha, global_step):
         ema_param.data.mul_(alpha).add_(1 - alpha, param.data)
 
 
-def evaluate(epoch, eval_type='valid', final_eval=False):
+def evaluate(epoch, eval_type='test', final_eval=False):
     kko=open('predictions.txt','w')
         
 

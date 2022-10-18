@@ -33,7 +33,7 @@ parser.add_argument("--outputdir", type=str, default='savedir/', help="Output di
 parser.add_argument("--output_model_name", type=str, default='model.pickle')
 parser.add_argument("--c", type=float, default='1000')
 parser.add_argument("--c2", type=float, default='100')
-parser.add_argument("--tv", type=int, default='1')
+parser.add_argument("--tv", type=int, default=1)
 
 parser.add_argument("--d", type=float, default='0.999')
 parser.add_argument("--cth", type=float, default='0')
@@ -162,7 +162,7 @@ def getFeatures(fin):
     #_,xw = aligner.transformWordRep()
     return y,xs
 
-train,valid, test,unlab ,trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name,num_classes=params.n_classes)
+train, test, unlab, trainu= get_pdtb(params.nlipath,params.dom,params.unsupervised_data_name,params.tv,supervised_data_name=params.supervised_data_name,num_classes=params.n_classes)
 _,xsl = getFeatures(os.path.join(params.nlipath,f'{params.supervised_data_name}_sentences.txt'))
 
 _,xst = getFeatures(os.path.join(params.nlipath,f'{params.unsupervised_data_name}_sentences.txt'))
@@ -185,7 +185,7 @@ if params.norm==1:
 xstt=xst[params.tv:]
 xst=xst[:params.tv]
 word_vec = build_vocab(train['s1']+ #+ train['s2'] +
-                      # valid['s1'] + valid['s2'] +
+                      # validation['s1'] + validation['s2'] +
                        #test['s1'] + test['s2']
                        unlab['s1']+trainu['s1'], GLOVE_PATH)
 
@@ -195,7 +195,7 @@ if params.sptrain==1:
     train['label']=np.concatenate((train['label'],trainu['label']))
     xsl=np.concatenate((xsl,xslu))
 for split in ['s1']:
-    for data_type in ['train', 'valid', 'test', 'unlab', 'trainu']:
+    for data_type in ['train', 'test', 'unlab', 'trainu']:
         eval(data_type)[split] = np.array([['<s>'] +
             [word for word in sent.split() if word in word_vec] 
             #+            ['</s>']

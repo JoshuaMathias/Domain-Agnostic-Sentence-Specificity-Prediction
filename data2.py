@@ -109,21 +109,20 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,n
     
     for data_type in ['trainu','train','unlab','test']:
         s1[data_type], s2[data_type], target[data_type],targetv[data_type] = {},{}, {}, {}
+    
     if supervised_data_name:
         s1['train']['path'] = os.path.join(data_path, f'{supervised_data_name}_sentences.txt')
+        target['train']['path'] = os.path.join(data_path,f'{supervised_data_name}_labels.txt')
     
 
     s1['test']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_sentences.txt') # Sentences
     s1['unlab']['path'] = os.path.join(data_path, f'{unsupervised_data_name}_unlabeled_sentences.txt') # Unlabeled sentences
     # Note: The data specified by the below target and targetv are not used except as dummy variables,
     # but if not provided or not existing there will be an error.
-    target['test']['path'] = os.path.join(data_path,f'{supervised_data_name}_labels.txt') # Specificity binary labels for sentences
-    targetv['test']['path'] = os.path.join(data_path,f'{supervised_data_name}_ratings.txt') # Specificity ratings for sentences
+    target['test']['path'] = os.path.join(data_path,f'{unsupervised_data_name}_labels.txt') # Specificity binary labels for sentences
+    targetv['test']['path'] = os.path.join(data_path,f'{unsupervised_data_name}_ratings.txt') # Specificity ratings for sentences
 
     s1['trainu']['path'] = os.path.join(data_path, 'aaai15unlabeled/all.60000.sents')
-
-    if supervised_data_name:
-        target['train']['path'] = os.path.join(data_path,f'{supervised_data_name}_labels.txt')
 
     target['trainu']['path'] = os.path.join(data_path,'aaai15unlabeled/all.60000.spec')
 
@@ -161,7 +160,8 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,n
         train = {'s1': s1['train']['sent'][:49280],# 's2': s2['train']['sent'],
                  'label': target['train']['data'][:49280]}
     
-    elif dom==1:   
+    elif dom==1:  
+        # dom is 1 by default 
         train = {'s1': s1['train']['sent'],# 's2': s2['train']['sent'],
                  'label': target['train']['data']}
     
@@ -177,7 +177,8 @@ def get_pdtb(data_path,dom,unsupervised_data_name,tv,supervised_data_name=None,n
          #    'label': target['train']['data']}
     trainu = {'s1': s1['trainu']['sent'],# 's2': s2['train']['sent'],
              'label': target['trainu']['data']}
-    dev = {'s1': s1['test']['sent'][:tv],'label': target['test']['data'][:tv],'labelv': targetv['test']['data'][:tv]}
-    test = {'s1': s1['test']['sent'][tv:],'label': target['test']['data'][tv:],'labelv': targetv['test']['data'][tv:]}
+    # validation = {'s1': s1['test']['sent'][:tv],'label': target['test']['data'][:tv],'labelv': targetv['test']['data'][:tv]}
+    # test = {'s1': s1['test']['sent'][tv:],'label': target['test']['data'][tv:],'labelv': targetv['test']['data'][tv:]}
+    test = {'s1': s1['test']['sent'],'label': target['test']['data'],'labelv': targetv['test']['data']}
  
-    return train, dev, test,unlab,trainu
+    return train, test, unlab, trainu
