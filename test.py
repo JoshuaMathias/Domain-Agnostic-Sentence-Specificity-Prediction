@@ -347,7 +347,7 @@ def evaluate(epoch, eval_type='test', final_eval=False):
         # model forward
         output = pdtb_net2((s1_batch, s1_len),s1_batchf) 
         ou2 = F.softmax(output, dim=1)
-            
+
         for sis in range(output.size(0)):
             kko.write(str(ou2.data[sis,1])+'\n')
         

@@ -378,16 +378,28 @@ def trainepoch(epoch):
                 sou = F.softmax(output, dim=1)
                 
                 sou2 = F.softmax(output2, dim=1)
+                # print('ou softmax:', ou)
+                # print('ou2 softmax:', ou2)
+                # print('sou softmax:', sou)
+                # print('sou2 softmax:', sou2)
      
                 a,_=torch.max(ou,1)
                 sa,_=torch.max(sou,1)
+                # print('a/ou max:', a)
+                # print('sa/sou max:', sa)
 
-                a=(a.detach()>params.th).view(-1,1).float()
-                sa=(sa.detach()>params.th).view(-1,1).float()
-                ou=ou*  torch.cat((a,a), 1)
-                ou2=ou2*  torch.cat((a,a), 1)
-                sou=sou*  torch.cat((sa,sa), 1)
-                sou2=sou2*  torch.cat((sa,sa), 1)
+                # a=(a.detach()>params.th).view(-1,1).float()
+                # sa=(sa.detach()>params.th).view(-1,1).float()
+                print('a:', a, '\nou:', ou)
+                # ou=ou*  torch.cat((a,a), 1)
+                ou=ou * a.unsqueeze (-1)
+                print('out after cat:', ou)
+                # ou2=ou2*  torch.cat((a,a), 1)
+                ou2=ou2 * a.unsqueeze (-1)
+                # sou=sou*  torch.cat((sa,sa), 1)
+                sou=sou * sa.unsqueeze (-1)
+                # sou2=sou2*  torch.cat((sa,sa), 1)
+                sou2=sou2 * sa.unsqueeze (-1)
             
             else:
                 ou=outputu[:,0]
