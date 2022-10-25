@@ -404,7 +404,6 @@ def trainepoch(epoch):
             loss2=( F.mse_loss(ou, ou2.detach(), size_average=False)+F.mse_loss(sou, sou2.detach(), size_average=False)) / params.n_classes/params.batch_size
             # loss
             if params.loss==0:
-                class_targets = 
                 # tgt_batch=torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
                 tgt_batch = tgt_batch.unsqueeze()
                 oop=F.softmax(output, dim=1)
