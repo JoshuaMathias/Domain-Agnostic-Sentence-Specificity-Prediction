@@ -319,6 +319,7 @@ def trainepoch(epoch):
     epoch_size = len(s1)
     if params.epoch_size is not None and params.epoch_size < epoch_size:
         epoch_size = params.epoch_size
+    loss = None
     for stidx in range(0, epoch_size, params.batch_size):
     
         try:
