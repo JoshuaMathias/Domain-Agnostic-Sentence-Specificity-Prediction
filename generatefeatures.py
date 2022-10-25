@@ -14,7 +14,7 @@ import torch
 from torch.autograd import Variable
 
 Instance = namedtuple("Instance","uid,label,rawsent")
-word_vectors = None
+word_vectors = {}
 
 class ModelNewText(object):
 

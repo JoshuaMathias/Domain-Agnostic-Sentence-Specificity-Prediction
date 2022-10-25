@@ -320,6 +320,7 @@ def trainepoch(epoch):
     if params.epoch_size is not None and params.epoch_size < epoch_size:
         epoch_size = params.epoch_size
     loss = None
+    print('epoch_size', epoch_size, 'batch_size', params.batch_size)
     for stidx in range(0, epoch_size, params.batch_size):
     
         try:
@@ -327,7 +328,8 @@ def trainepoch(epoch):
                                          word_vec)
             s1_batch2, s1_len2 = get_batch_aug(s1[stidx:stidx + params.batch_size],
                                          word_vec)
-        
+            print('s1_len', s1_len)
+            print('s1_len2', s1_len2)
             s1_batchf=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
             s1_batchf2=torch.from_numpy(s1f[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
             
@@ -337,6 +339,8 @@ def trainepoch(epoch):
             su_batch2, su_len2 = get_batch_aug(s_u[stidx:stidx + params.batch_size],
                                          word_vec)
             su_batchf2=torch.from_numpy(suf[stidx:stidx + params.batch_size]+ np.random.normal(0, params.gnoise2, 14 )).float()*params.sf
+            print('su_len', su_len)
+            print('su_len2', su_len2)
             if config_nli_model['use_cuda']:
                 s1_batch= Variable(s1_batch).cuda()*params.wf
                 s1_batchf= Variable(s1_batchf).cuda()
@@ -466,6 +470,8 @@ def trainepoch(epoch):
         except ValueError:
             # ValueError: zero-size array to reduction operation maximum which has no identity
             # May happen at the end when the batch is too small.
+            import traceback
+            print(traceback.format_exc())
             break
     print(f'Loss after epoch {epoch}: {loss}')
     return 0
