@@ -466,6 +466,7 @@ def trainepoch(epoch):
             # ValueError: zero-size array to reduction operation maximum which has no identity
             # May happen at the end when the batch is too small.
             break
+    print(f'Loss after epoch {epoch}: {loss}')
     return 0
 
 
