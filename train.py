@@ -405,7 +405,7 @@ def trainepoch(epoch):
             # loss
             if params.loss==0:
                 # tgt_batch=torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
-                tgt_batch = tgt_batch.unsqueeze()
+                tgt_batch = tgt_batch.unsqueeze(-1)
                 oop=F.softmax(output, dim=1)
                 oop2=F.softmax(outputu, dim=1)
                 loss3=0
