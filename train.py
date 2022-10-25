@@ -404,7 +404,7 @@ def trainepoch(epoch):
             loss2=( F.mse_loss(ou, ou2.detach(), size_average=False)+F.mse_loss(sou, sou2.detach(), size_average=False)) / params.n_classes/params.batch_size
             # loss
             if params.loss==0:
-                target_classes = [tgt_batch.view(-1, 1) for _ in range(params.num_classes)]
+                target_classes = [tgt_batch.view(-1, 1) for _ in range(config_nli_model['n_classes'])]
                 tgt_batch = torch.cat(target_classes)
                 # tgt_batch=torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
                 # tgt_batch = tgt_batch.unsqueeze(-1)
