@@ -14,6 +14,7 @@ import torch
 from torch.autograd import Variable
 
 Instance = namedtuple("Instance","uid,label,rawsent")
+word_vectors = None
 
 class ModelNewText(object):
 
@@ -24,7 +25,6 @@ class ModelNewText(object):
         self.brnspace = brnspace
         self.embeddings = embeddings
         self.fileid = None
-        self.word_vectors = {}
         self.tokenizer = tokenizer
 
     def loadFromFile(self,filename):
@@ -148,10 +148,10 @@ class ModelNewText(object):
         labels, features = self.transformShallow()
 
         # Turn the features into a numpy vector.
-        word_vectors = self.word_vectors
+        global word_vectors
 
         # Load word vectors.
-        if not self.word_vectors:
+        if not word_vectors:
             with open(word_vectors_path, encoding="utf8") as file:
                 print('ModelNewText: Loading word vectors from', word_vectors_path)
                 for line in file:
