@@ -238,10 +238,14 @@ pdtb_net2 = PDTBNet(config_nli_model)
 # loss
 weight = torch.FloatTensor(params.n_classes).fill_(1)
 if params.loss==0:
-    loss_fn = nn.CrossEntropyLoss(weight=weight)
+    if params.num_classes == 2:
+        # Binary Cross Entrophy
+        loss_fn = nn.BCELoss(weight=weight)
+    else:
+        loss_fn = nn.CrossEntropyLoss(weight=weight)
 else:
     loss_fn = nn.SoftMarginLoss()
-loss_fn=nn.BCELoss(weight=weight)
+
 loss_fn.size_average = False
 
 # optimizer
@@ -464,10 +468,9 @@ def trainepoch(epoch):
                 words_count = 0
                 all_costs = []
         except ValueError:
-            # ValueError: zero-size array to reduction operation maximum which has no identity
+            # ValueError at np.max: zero-size array to reduction operation maximum which has no identity
             # May happen at the end when the batch is too small.
-            import traceback
-            print(traceback.format_exc())
+            print("Warning: Empty batch")
             break
     print(f'Loss after epoch {epoch}: {loss}')
     return 0
