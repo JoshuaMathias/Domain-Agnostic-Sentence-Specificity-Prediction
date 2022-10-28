@@ -238,7 +238,7 @@ pdtb_net2 = PDTBNet(config_nli_model)
 # loss
 weight = torch.FloatTensor(params.n_classes).fill_(1)
 if params.loss==0:
-    if params.num_classes == 2:
+    if params.n_classes == 2:
         # Binary Cross Entrophy
         loss_fn = nn.BCELoss(weight=weight)
     else:
@@ -403,10 +403,13 @@ def trainepoch(epoch):
             loss2=( F.mse_loss(ou, ou2.detach(), size_average=False)+F.mse_loss(sou, sou2.detach(), size_average=False)) / params.n_classes/params.batch_size
             # loss
             if params.loss==0:
-                target_classes = [tgt_batch.view(-1, 1) for _ in range(config_nli_model['n_classes'])]
-                tgt_batch = torch.cat(target_classes, dim=1)
-                oop=F.softmax(output, dim=1)
-                oop2=F.softmax(outputu, dim=1)
+                if config_nli_model['n_classes'] == 2:
+                    tgt_batch = torch.cat([1.0-tgt_batch.view(-1,1),tgt_batch.view(-1,1) ],dim=1)
+                    oop = F.softmax(output, dim=1)
+                    oop2 = F.softmax(outputu, dim=1)
+                else:
+                    oop = output
+                    oop2 = outputu
                 loss3=0
                 if params.use_gpu:
                     pppp=Variable(torch.FloatTensor([1/oop.size(0)]).cuda())
@@ -418,8 +421,7 @@ def trainepoch(epoch):
                 
                 kss=float(params.klsig)
                 
-                
-                loss1 = loss_fn(oop, tgt_batch.float())
+                loss1 = loss_fn(oop, tgt_batch.long())
             else:
                 loss1 = loss_fn(output[:,0], (tgt_batch*2-1).float())
             if epoch>=params.se_epoch_start:

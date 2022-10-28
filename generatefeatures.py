@@ -157,7 +157,12 @@ class ModelNewText(object):
                 for line in file:
                     word, vec = line.split(' ', 1)
                     if word:
-                        word_vectors[word] = np.array(list(map(float, vec.split())))
+                        try:
+                            word_vectors[word] = np.array(list(map(float, vec.split())))
+                        except Exception:
+                            import traceback
+                            print(traceback.format_exc())
+                            print('Error loading word vector for word', word)
                 print(f'ModelNewText: Loaded {len(word_vectors)} word vectors.')
         sentence_tokens = [sent.rawsent.getTokens() for sent in self.test]
         # Prepare a torch vector of the GloVe word vectors 
