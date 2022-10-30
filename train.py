@@ -240,7 +240,7 @@ if params.input_model_name:
     print(f'Loading previous model at {unsupervised_model_filename}')
     pdtb_net = torch.load(supervised_model_filename)
     pdtb_net2 = torch.load(unsupervised_model_filename)
-    if use_gpu:
+    if params.use_gpu:
         pdtb_net.cuda()
         pdtb_net2.cuda()
 else:
