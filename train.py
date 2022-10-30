@@ -31,6 +31,8 @@ parser.add_argument("--unsupervised_data_name", type=str, default="twitter", hel
 parser.add_argument("--glove_path", type=str, default='glove.840B.300d.txt', help="Path to GLOVE file.")
 parser.add_argument("--outputdir", type=str, default='savedir/', help="Output directory")
 parser.add_argument("--output_model_name", type=str, default='model.pickle')
+parser.add_argument("--input_model_name", type=str, default=None, help="If specified, the supervised and unsupervised models will be loaded using this name, and training will continue using these models.\
+    Note that model configuration specified by other parameters will not be applied.")
 parser.add_argument("--c", type=float, default='1000')
 parser.add_argument("--c2", type=float, default='100')
 parser.add_argument("--tv", type=int, default=1)
@@ -232,8 +234,18 @@ encoder_types = ['BLSTMEncoder', 'BLSTMprojEncoder', 'BGRUlastEncoder',
 assert params.encoder_type in encoder_types, "encoder_type must be in " + \
                                              str(encoder_types)
 
-pdtb_net = PDTBNet(config_nli_model)
-pdtb_net2 = PDTBNet(config_nli_model)
+if params.input_model_name:
+    supervised_model_filename = os.path.join(params.outputdir, 'model-supervised_'+params.input_model_name)
+    unsupervised_model_filename = os.path.join(params.outputdir, 'model-unsupervised_'+params.input_model_name)
+    print(f'Loading previous model at {unsupervised_model_filename}')
+    pdtb_net = torch.load(supervised_model_filename)
+    pdtb_net2 = torch.load(unsupervised_model_filename)
+    if use_gpu:
+        pdtb_net.cuda()
+        pdtb_net2.cuda()
+else:
+    pdtb_net = PDTBNet(config_nli_model)
+    pdtb_net2 = PDTBNet(config_nli_model)
 
 # loss
 weight = torch.FloatTensor(params.n_classes).fill_(1)
@@ -493,10 +505,10 @@ while epoch < params.n_epochs:
 print('\nEpochs completed: {0}'.format(epoch))
 
 # Save encoder instead of full model
-model_filename = os.path.join(params.outputdir, 'model-supervised_'+params.output_model_name)
-print('train.py: Saving supervised model encoder at ', model_filename)
-torch.save(pdtb_net, model_filename)
+supervised_model_filename = os.path.join(params.outputdir, 'model-supervised_'+params.output_model_name)
+print('train.py: Saving supervised model encoder at ', supervised_model_filename)
+torch.save(pdtb_net, supervised_model_filename)
 
-model_filename = os.path.join(params.outputdir, 'model-unsupervised_'+params.output_model_name)
-print('train.py: Saving unsupervised (fine-tuned) model encoder at ', model_filename)
-torch.save(pdtb_net2, model_filename) 
+unsupervised_model_filename = os.path.join(params.outputdir, 'model-unsupervised_'+params.output_model_name)
+print('train.py: Saving unsupervised (fine-tuned) model encoder at ', unsupervised_model_filename)
+torch.save(pdtb_net2, unsupervised_model_filename) 
