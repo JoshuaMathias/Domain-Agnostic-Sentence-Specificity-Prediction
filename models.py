@@ -12,10 +12,19 @@ This file contains the definition of encoders used in https://arxiv.org/pdf/1705
 
 import numpy as np
 import time
-
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+import os
+from dotenv import load_dotenv
+
+
+# Get .env variables:
+load_dotenv()
+USE_CUDA = os.getenv('USE_CUDA')
+# Convert to bool, but only if .env file exists:
+if USE_CUDA is not None:
+    USE_CUDA = USE_CUDA == 'True'
 
 """
 BLSTM (max/mean) encoder
@@ -31,7 +40,12 @@ class BLSTMEncoder(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
@@ -49,7 +63,12 @@ class BLSTMEncoder(nn.Module):
         sent_len, idx_sort = np.sort(sent_len)[::-1], np.argsort(-sent_len)
         idx_unsort = np.argsort(idx_sort)
 
-        use_cuda = self.use_cuda
+        # If .env file exists, use env variable for `use_cuda`:
+        if USE_CUDA is not None:
+            use_cuda = USE_CUDA
+        else:
+            use_cuda = self.use_cuda
+
         if use_cuda:
             idx_sort = torch.from_numpy(idx_sort).cuda()
             sent = sent.index_select(1, Variable(idx_sort).cuda())
@@ -285,7 +304,12 @@ class BGRUlastEncoder(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                bidirectional=True, dropout=self.dpout_model)
@@ -342,7 +366,12 @@ class BLSTMprojEncoder(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
@@ -404,7 +433,12 @@ class LSTMEncoder(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=False, dropout=self.dpout_model)
@@ -450,7 +484,12 @@ class GRUEncoder(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
         self.dpout_model = config['dpout_model']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.GRU(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                bidirectional=False, dropout=self.dpout_model)
@@ -497,7 +536,12 @@ class InnerAttentionNAACLEncoder(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
@@ -536,7 +580,7 @@ class InnerAttentionNAACLEncoder(nn.Module):
         sent_output = sent_output.index_select(1, Variable(torch.cuda.LongTensor(idx_unsort)).cuda())
 
         sent_output = sent_output.transpose(0,1).contiguous()
-       
+
         sent_output_proj = self.proj_lstm(sent_output.view(-1,
             2*self.enc_lstm_dim)).view(bsize, -1, 2*self.enc_lstm_dim)
 
@@ -577,7 +621,12 @@ class InnerAttentionMILAEncoder(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
@@ -675,7 +724,12 @@ class InnerAttentionYANGEncoder(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.n_enc_layers = config['n_enc_layers']
         self.pool_type = config['pool_type']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.enc_lstm = nn.LSTM(self.word_emb_dim, self.enc_lstm_dim, self.n_enc_layers,
                                 bidirectional=True)
@@ -758,7 +812,12 @@ class ConvNetEncoder(nn.Module):
         self.word_emb_dim = config['word_emb_dim']
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.pool_type = config['pool_type']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.convnet1 = nn.Sequential(
             nn.Conv1d(self.word_emb_dim, 2*self.enc_lstm_dim, kernel_size=3,
@@ -825,7 +884,12 @@ class NLINet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 4*2*self.enc_lstm_dim
@@ -874,8 +938,13 @@ class PDTBNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
-     
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
+
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
         self.inputdim = 4*self.inputdim if self.encoder_type in \
@@ -920,7 +989,7 @@ class PDTBNet(nn.Module):
 class PDTBNee(nn.Module):
     def __init__(self, config,we):
         super(PDTBNee, self).__init__()
-        self.embeddings=nn.Embedding(config['n_words'],config['word_emb_dim']) 
+        self.embeddings=nn.Embedding(config['n_words'],config['word_emb_dim'])
         self.embeddings.weight=nn.Parameter(we)
         #print(self.embeddings(Variable(torch.LongTensor([0]))))
         # classifier
@@ -930,8 +999,13 @@ class PDTBNee(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
-     
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
+
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
         self.inputdim = 4*self.inputdim if self.encoder_type in \
@@ -963,7 +1037,7 @@ class PDTBNee(nn.Module):
   #  def forward(self, s1, s2):
     def forward(self, s1,ss):
         # s1 : (s1, s1_len)
-        
+
         ss1,ss2=s1
         sss=Variable(torch.FloatTensor(ss1.size(0),ss1.size(1),self.embeddings.weight.size(1))).cuda()
         #sss=torch.index_select(self.embeddings, 2, ss1)
@@ -973,10 +1047,10 @@ class PDTBNee(nn.Module):
                 #lookup_tensor = torch.LongTensor([0])
                 #sss[i,j,:]=self.embeddings(Variable(lookup_tensor))
                 sss[i,j,:]=self.embeddings(ss1[i,j,0].long())
-        #print(sss)  
+        #print(sss)
         #print(ss2)
-        #print(ss1)  
-        
+        #print(ss1)
+
         u = self.encoder((sss, ss2))
         #v = self.encoder(s2)
         features = torch.cat((u,self.bn(ss)), 1)
@@ -999,8 +1073,13 @@ class AsNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
-     
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
+
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
         self.inputdim = 4*self.inputdim if self.encoder_type in \
@@ -1048,7 +1127,12 @@ class AscNet(nn.Module):
         self.n_classes = config['n_classes']
         self.dpout_fc = config['dpout_fc']
         self.inputdim = 64
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         if self.nonlinear_fc:
             self.classifier = nn.Sequential(
@@ -1088,7 +1172,12 @@ class ClassificationNet(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
 
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim
@@ -1109,7 +1198,7 @@ class ClassificationNet(nn.Module):
     def encode(self, s1):
         emb = self.encoder(s1)
         return emb
-        
+
 class PDTBNetc(nn.Module):
     def __init__(self, config):
         super(PDTBNetc, self).__init__()
@@ -1121,8 +1210,13 @@ class PDTBNetc(nn.Module):
         self.enc_lstm_dim = config['enc_lstm_dim']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
-     
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
+
         self.encoder = eval(self.encoder_type)(config)
         self.inputdim = 2*self.enc_lstm_dim+14
         self.inputdim = 4*self.inputdim if self.encoder_type in \
@@ -1177,7 +1271,7 @@ class BLSTMEncoderc(nn.Module):
         self.dpout_model = config['dpout_model']
         self.use_cuda = config['use_cuda']
 
-        self.embeddings=nn.Embedding(108,config['char_emb_dim']) 
+        self.embeddings=nn.Embedding(108,config['char_emb_dim'])
         self.char_lstm = nn.LSTM(config['char_emb_dim'], config['char_rep_dim'], self.n_enc_layers,
                                 bidirectional=True, dropout=self.dpout_model)
 
@@ -1205,12 +1299,12 @@ class BLSTMEncoderc(nn.Module):
             sent = sent.index_select(1, Variable(idx_sort))
 
 #        print('sent')
-        
+
  #       print(sent)
   #      print('self.embeddings')
    #     print(self.embeddings)
         #sc = torch.index_select(self.embeddings,0, sc)
-        
+
 #        sc=sc.transpose(1,2)
         s00=sc.size(0)
         s01=sc.size(1)
@@ -1221,22 +1315,22 @@ class BLSTMEncoderc(nn.Module):
         #print(torch.min(torch.min(sc)))
 
         sc=self.embeddings(sc.long())
-        
+
         uuuua=[]
         for awffwa in range (s00*s01):
-            uuuua.append(20)                        
+            uuuua.append(20)
         sc_len=np.array(uuuua)
         # Handling padding in Recurrent Networks
         sc_packed = nn.utils.rnn.pack_padded_sequence(sc, sc_len)
 
-    
+
         self.char_lstm.flatten_parameters()
         char_output = self.char_lstm(sc_packed)[0]  # seqlen x batch x 2*nhid
         char_output = nn.utils.rnn.pad_packed_sequence(char_output)[0]
 #30*960*16->30*32*30*16
         char_output=char_output.contiguous().transpose(0,1)
 #        char_output=char_output.contiguous().view(s00,s01,char_output.size(1),char_output.size(2))
- 
+
 #        print('char_output@@@@@@@@@@@')
 #        print(char_output)
 
@@ -1253,10 +1347,10 @@ class BLSTMEncoderc(nn.Module):
         #char_output=char_output.index_select(1,Variable(torch.LongTensor(uuuua).cuda()))
 #        print('char_output')
 #        print(char_output)
-        
+
         sent=sent.contiguous().view(s00*s01,sent.size(2))
         sent=torch.cat((sent,char_output.view(char_output.size(0),char_output.size(2))),1)
-        sent=sent.contiguous().view(s00,s01,sent.size(1))  
+        sent=sent.contiguous().view(s00,s01,sent.size(1))
 #        print('sentt')
 #        print(sent)
         sent_packed = nn.utils.rnn.pack_padded_sequence(sent, sent_len)
@@ -1264,7 +1358,7 @@ class BLSTMEncoderc(nn.Module):
 #        print(sent_packed)
         self.enc_lstm.flatten_parameters()
         sent_output = self.enc_lstm(sent_packed)[0]  # seqlen x batch x 2*nhid
-        
+
         sent_output = nn.utils.rnn.pad_packed_sequence(sent_output)[0]
 
         # Un-sort by length
@@ -1484,12 +1578,17 @@ class PDTBNetdd(nn.Module):
         self.n_enc_layers = config['n_enc_layers']
         self.encoder_type = config['encoder_type']
         self.dpout_fc = config['dpout_fc']
-        self.use_cuda = config['use_cuda']
-     
+
+        # If .env file exists, use env variable:
+        if USE_CUDA is not None:
+            self.use_cuda = USE_CUDA
+        else:
+            self.use_cuda = config['use_cuda']
+
         self.encoder = eval(self.encoder_type)(config)
         dpout_modell=config['dpout_model']
         config['dpout_model']=0
-        
+
         self.encoder2 = eval(self.encoder_type)(config)
         config['dpout_model']=dpout_modell
 
@@ -1505,7 +1604,7 @@ class PDTBNetdd(nn.Module):
                                         else self.inputdim2
         self.bn=nn.BatchNorm1d(14)
         self.sig=nn.Sigmoid()
-                
+
         if self.nonlinear_fc:
             self.classifier = nn.Sequential(
                 nn.Dropout(p=self.dpout_fc),
@@ -1544,10 +1643,10 @@ class PDTBNetdd(nn.Module):
         vf = torch.cat((v,self.bn(ss)), 1)
 
         vv = self.classifier2(vf)
-        
+
         vv=self.sig(vv)
         features = torch.cat((u,self.bn(ss),vv), 1)
-        
+
         output = self.classifier(features)
         #output = self.classifier(u)
         return output,vv
